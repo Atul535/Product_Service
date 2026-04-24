@@ -60,5 +60,13 @@ const getProfile = async (req, res, next) => {
         next(error);
     }
 }
+const getAllUsers = async (req, res, next) => {
+    try {
+        const user = await prisma.user.findMany({ select: { id: true, name: true, email: true, } });
+        res.json(user);
+    } catch (error) {
+        next(error);
+    }
+}
 
-module.exports = { register, login, getProfile };
+module.exports = { register, login, getProfile, getAllUsers };
