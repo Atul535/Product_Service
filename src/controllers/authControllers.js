@@ -57,7 +57,7 @@ const login = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
     try {
-        const token = req.headers.authorization.split('')[1];
+        const token = req.headers.authorization.split(' ')[1];
         //delete token from database
         await prisma.session.delete({
             where: { token: token }
