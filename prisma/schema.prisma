@@ -12,6 +12,7 @@ model User {
   name     String
   email    String @unique
   password String
+  sessions Session[]
 }
 
 model Product {
@@ -25,3 +26,12 @@ model Product {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  createdAt DateTime @default(now())
+}
+
