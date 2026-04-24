@@ -43,30 +43,29 @@ const login = async (req, res, next) => {
         }
         //generate JWT token
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        await prisma.session.create({
+            data: {
+                userId: user.id,
+                token: token
+            }
+        });
         res.json({ message: 'Login successful', token });
     } catch (error) {
         next(error);
     }
 };
 
-const getProfile = async (req, res, next) => {
+const logout = async (req, res, next) => {
     try {
-        const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { id: true, name: true, email: true, } });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found!!' });
-        }
-        res.json(user);
+        const token = req.headers.authorization.split('')[1];
+        //delete token from database
+        await prisma.session.delete({
+            where: { token: token }
+        });
+        res.json({ message: 'Logout successful and session cleared' });
     } catch (error) {
-        next(error);
-    }
-}
-const getAllUsers = async (req, res, next) => {
-    try {
-        const user = await prisma.user.findMany({ select: { id: true, name: true, email: true, } });
-        res.json(user);
-    } catch (error) {
-        next(error);
+        res.status(400).json({ message: 'Logout failed or already logged out' });
     }
 }
 
-module.exports = { register, login, getProfile, getAllUsers };
+module.exports = { register, login, logout };

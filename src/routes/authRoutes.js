@@ -5,7 +5,6 @@ const router = express.Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.get('/profile', authMiddleware, getProfile);
-router.get('/getAllUsers', authMiddleware, getAllUsers);
+router.post('/logout', authMiddleware, logout);
 
 module.exports = router;
