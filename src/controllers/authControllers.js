@@ -76,7 +76,7 @@ const forgetPassword = async (req, res, next) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        const otp = Math.floor(100000 + Math.random() * 9000000).toString();
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         //5 minutes
         const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
