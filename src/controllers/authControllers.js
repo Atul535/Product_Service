@@ -76,31 +76,39 @@ const forgetPassword = async (req, res, next) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        const secret = process.env.JWT_SECRET + user.password;
-        const token = jwt.sign({ email: user.email, id: user.id }, secret, { expiresIn: '15m' });
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const link = `${baseUrl}/api/auth/reset-password/${user.id}/${token}`;
+        const otp = Math.floor(100000 + Math.random() * 9000000).toString();
+        //5 minutes
+        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
+        //update to database
+        await prisma.user.update({
+            where: { email },
+            data: {
+                resetOtp: otp,
+                resetOtpExpiry: otpExpiry
+            }
+        });
+        //send email with otp
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+                pass: process.env.EMAIL_PASS,
             }
         });
 
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: user.email,
-            subject: 'Password reset request!',
+            subject: 'Reset your password',
             html: `
-            <h1>Password Reset</h1>
-            <p>Click on the link to reset your password:</p>
-            <a href="${link}">Reset Password</a>
-            <p>This link will expire in 15 minutes</p>
+            <h1>Reset your password</h1>
+            <p>Please use the OTP below to reset your password.</p>
+            <p>OTP: <strong>${otp}</strong></p>
+            <p>The OTP is valid for 5 minutes.</p>
             `
         });
-        res.json({ message: 'Reset link sent to your email' });
+        res.json({ message: 'An OTP has been sent to your registered email.' })
 
     } catch (error) {
         next(error);
@@ -109,21 +117,31 @@ const forgetPassword = async (req, res, next) => {
 
 const resetPassword = async (req, res, next) => {
     try {
-        const { id, token } = req.params;
-        const { newPassword } = req.body;
-        const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+        const { email, otp, newPassword } = req.body;
+        const user = await prisma.user.findUnique({ where: { email } });
+        // finduser
         if (!user) {
             return res.status(404).json({ message: 'User not found!' });
         }
-        const secret = process.env.JWT_SECRET + user.password;
-        try {
-            jwt.verify(token, secret);
-        } catch (error) {
-            return res.status(400).json({ message: 'Link is invalid or expired!' });
+        //check otp
+        if (user.resetOtp !== otp) {
+            return res.status(404).json({ message: 'Invalid OTP!' });
         }
-
+        //check otp expiry
+        if (user.resetOtpExpiry < new Date()) {
+            return res.status(404).json({ message: 'OTP expired. Please request a new one!' });
+        }
+        //hash the new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await prisma.user.update({ where: { id: parseInt(id) }, data: { password: hashedPassword } });
+        // 5. Update password and CLEAR the OTP so it can't be reused
+        await prisma.user.update({
+            where: { email },
+            data: {
+                password: hashedPassword,
+                resetOtp: null,
+                resetOtpExpiry: null
+            }
+        });
         res.json({ message: 'Password reset successful!!' });
     } catch (error) {
         next(error);

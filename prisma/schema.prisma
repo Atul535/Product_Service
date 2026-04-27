@@ -13,6 +13,8 @@ model User {
   email    String @unique
   password String
   sessions Session[]
+  resetOtp String?
+  resetOtpExpiry DateTime?
 }
 
 model Product {
