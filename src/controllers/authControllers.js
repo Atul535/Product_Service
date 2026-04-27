@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 const prisma = require('../utils/prisma');
+const nodemailer = require('nodemailer');
 
 const register = async (req, res, next) => {
     try {
@@ -68,4 +69,65 @@ const logout = async (req, res, next) => {
     }
 }
 
-module.exports = { register, login, logout };
+const forgetPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        const secret = process.env.JWT_SECRET + user.password;
+        const token = jwt.sign({ email: user.email, id: user.id }, secret, { expiresIn: '15m' });
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const link = `${baseUrl}/api/auth/reset-password/${user.id}/${token}`;
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: 'Password reset request!',
+            html: `
+            <h1>Password Reset</h1>
+            <p>Click on the link to reset your password:</p>
+            <a href="${link}">Reset Password</a>
+            <p>This link will expire in 15 minutes</p>
+            `
+        });
+        res.json({ message: 'Reset link sent to your email' });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+const resetPassword = async (req, res, next) => {
+    try {
+        const { id, token } = req.params;
+        const { newPassword } = req.body;
+        const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found!' });
+        }
+        const secret = process.env.JWT_SECRET + user.password;
+        try {
+            jwt.verify(token, secret);
+        } catch (error) {
+            return res.status(400).json({ message: 'Link is invalid or expired!' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({ where: { id: parseInt(id) }, data: { password: hashedPassword } });
+        res.json({ message: 'Password reset successful!!' });
+    } catch (error) {
+        next(error);
+    }
+}
+
+module.exports = { register, login, logout, forgetPassword, resetPassword };
