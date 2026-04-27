@@ -12,8 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/getUser', profileRoutes);
-app.use('/api/getAllUsers', profileRoutes);
+app.use('/api/users', profileRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 //Routes
 app.get('/', (req, res) => {
