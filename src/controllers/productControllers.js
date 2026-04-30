@@ -3,7 +3,7 @@ const prisma = require('../utils/prisma');
 //create a new product
 const createProduct = async (req, res, next) => {
     try {
-        const { name, price, quantity, manufacturedDate } = req.body;
+        const { name, price, quantity, manufacturedDate, categoryId } = req.body;
         // get the image path if a file is uploaded
         const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -19,7 +19,8 @@ const createProduct = async (req, res, next) => {
                     price: parseFloat(price),
                     quantity: parseInt(quantity),
                     manufacturedDate: new Date(manufacturedDate),
-                    imageUrl
+                    imageUrl,
+                    categoryId: categoryId ? parseInt(categoryId) : null
                 },
             });
         });
@@ -32,12 +33,13 @@ const createProduct = async (req, res, next) => {
 //get all products(with soft-delete check)
 const getAllProducts = async (req, res, next) => {
     try {
-        const { name, page = 1, limit = 10, minPrice, maxPrice } = req.query;
+        const { name, page = 1, limit = 10, minPrice, maxPrice, categoryId } = req.query;
         const skip = (page - 1) * limit;
 
         const where = {
             isDeleted: false,
             ...(name && { name: { contains: name } }),
+            ...(categoryId && { categoryId: parseInt(categoryId) }),
             ...(minPrice || maxPrice) && {
                 price: {
                     ...(minPrice && { gte: Number(minPrice) }),
@@ -50,7 +52,8 @@ const getAllProducts = async (req, res, next) => {
                 where,
                 skip: parseInt(skip),
                 take: parseInt(limit),
-                orderBy: { createdAt: 'desc' }
+                orderBy: { createdAt: 'desc' },
+                include: { category: true }
             }),
             prisma.product.count({ where })
         ]);
@@ -66,7 +69,7 @@ const getAllProducts = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, price, quantity, manufacturedDate } = req.body;
+        const { name, price, quantity, manufacturedDate, categoryId } = req.body;
 
         const product = await prisma.$transaction(
             async (tx) => {
@@ -82,6 +85,7 @@ const updateProduct = async (req, res, next) => {
                         ...(price && { price: parseFloat(price) }),
                         ...(quantity && { quantity: parseInt(quantity) }),
                         ...(manufacturedDate && { manufacturedDate: new Date(manufacturedDate) }),
+                        ...(categoryId && { categoryId: parseInt(categoryId) })
                     }
                 });
             });
