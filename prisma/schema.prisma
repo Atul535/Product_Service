@@ -17,6 +17,15 @@ model User {
   resetOtpExpiry DateTime?
 }
 
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 model Product {
   id               Int      @id @default(autoincrement())
   name             String
@@ -25,9 +34,15 @@ model Product {
   manufacturedDate DateTime
   imageUrl         String?
   isDeleted        Boolean  @default(false)
+  
+  // Relation to Category
+  categoryId       Int?     // Optional so it doesn't break existing products
+  category         Category? @relation(fields: [categoryId], references: [id])
+  
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
+
 
 model Session {
   id        Int      @id @default(autoincrement())
