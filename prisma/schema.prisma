@@ -21,6 +21,7 @@ model Category {
   id          Int       @id @default(autoincrement())
   name        String    @unique
   description String?
+  imageUrl    String?
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
