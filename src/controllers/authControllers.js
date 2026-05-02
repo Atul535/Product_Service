@@ -162,12 +162,12 @@ const refreshToken = async (req, res, next) => {
             return res.status(403).json({ message: 'Invalid refresh token!' });
         }
         //verify refresh token
-        jwt.verify(refreshToken, process.env.JWT_SECRET, async (error, decoded) => {
+        jwt.verify(refreshToken, process.env.REFRESH_SECRET, async (error, decoded) => {
             if (error) {
                 await prisma.session.delete({ where: { refreshToken: refreshToken } });
                 return res.status(403).json({ message: 'Refresh token expired. Please login again.' });
             }
-            const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+            const newToken = jwt.sign({ userId: decoded.userId }, process.env.REFRESH_SECRET, { expiresIn: '7d' });
             //update the session with new token
             await prisma.session.update({ where: { refreshToken: refreshToken }, data: { token: newToken } });
             res.json({ token: newToken });
