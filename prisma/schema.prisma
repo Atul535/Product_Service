@@ -50,6 +50,7 @@ model Session {
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   token     String   @unique
+  refreshToken String?  @unique
   createdAt DateTime @default(now())
 }
 

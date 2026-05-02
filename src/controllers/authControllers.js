@@ -44,13 +44,15 @@ const login = async (req, res, next) => {
         }
         //generate JWT token
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const refreshToken = jwt.sign({ userId: user.id }, process.env.REFRESH_SECRET, { expiresIn: '7d' });
         await prisma.session.create({
             data: {
                 userId: user.id,
-                token: token
+                token: token,
+                refreshToken: refreshToken
             }
         });
-        res.json({ message: 'Login successful', token });
+        res.json({ message: 'Login successful', token, refreshToken });
     } catch (error) {
         next(error);
     }
@@ -148,4 +150,31 @@ const resetPassword = async (req, res, next) => {
     }
 }
 
-module.exports = { register, login, logout, forgetPassword, resetPassword };
+const refreshToken = async (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            return res.status(401).json({ message: 'Refresh token is required!' })
+        }
+
+        const session = await prisma.session.findUnique({ where: { refreshToken: refreshToken } });
+        if (!session) {
+            return res.status(403).json({ message: 'Invalid refresh token!' });
+        }
+        //verify refresh token
+        jwt.verify(refreshToken, process.env.JWT_SECRET, async (error, decoded) => {
+            if (error) {
+                await prisma.session.delete({ where: { refreshToken: refreshToken } });
+                return res.status(403).json({ message: 'Refresh token expired. Please login again.' });
+            }
+            const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+            //update the session with new token
+            await prisma.session.update({ where: { refreshToken: refreshToken }, data: { token: newToken } });
+            res.json({ token: newToken });
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+module.exports = { register, login, logout, forgetPassword, resetPassword, refreshToken };
