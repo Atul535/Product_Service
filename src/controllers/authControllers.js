@@ -152,25 +152,26 @@ const resetPassword = async (req, res, next) => {
 
 const refreshToken = async (req, res, next) => {
     try {
-        const { refreshToken } = req.body;
-        if (!refreshToken) {
+        const { refreshToken: oldRefreshToken } = req.body;
+        if (!oldRefreshToken) {
             return res.status(401).json({ message: 'Refresh token is required!' })
         }
 
-        const session = await prisma.session.findUnique({ where: { refreshToken: refreshToken } });
+        const session = await prisma.session.findUnique({ where: { refreshToken: oldRefreshToken } });
         if (!session) {
             return res.status(403).json({ message: 'Invalid refresh token!' });
         }
         //verify refresh token
-        jwt.verify(refreshToken, process.env.REFRESH_SECRET, async (error, decoded) => {
+        jwt.verify(oldRefreshToken, process.env.REFRESH_SECRET, async (error, decoded) => {
             if (error) {
-                await prisma.session.delete({ where: { refreshToken: refreshToken } });
+                await prisma.session.delete({ where: { refreshToken: oldRefreshToken } });
                 return res.status(403).json({ message: 'Refresh token expired. Please login again.' });
             }
-            const newToken = jwt.sign({ userId: decoded.userId }, process.env.REFRESH_SECRET, { expiresIn: '7d' });
+            const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+            const newRefreshToken = jwt.sign({ userId: decoded.userId }, process.env.REFRESH_SECRET, { expiresIn: '7d' });
             //update the session with new token
-            await prisma.session.update({ where: { refreshToken: refreshToken }, data: { token: newToken } });
-            res.json({ token: newToken });
+            await prisma.session.update({ where: { refreshToken: oldRefreshToken }, data: { token: newToken, refreshToken: newRefreshToken } });
+            res.json({ token: newToken, refreshToken: newRefreshToken });
         });
     } catch (error) {
         next(error);
