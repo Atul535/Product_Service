@@ -113,7 +113,7 @@ const searchProducts = async (req, res, next) => {
         if (!query) {
             return res.status(400).json({ message: 'Search query is required' });
         }
-        const products = await prisma.findMany({
+        const products = await prisma.product.findMany({
             where: {
                 isDeleted: false,  // dont return  soft deleted products
                 OR: [
