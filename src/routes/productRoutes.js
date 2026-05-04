@@ -1,9 +1,10 @@
 const express = require('express');
-const { createProduct, getAllProducts, updateProduct, deleteProduct } = require('../controllers/productControllers');
+const { createProduct, getAllProducts, updateProduct, deleteProduct, searchProducts } = require('../controllers/productControllers');
 const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const router = express.Router();
 
+router.get('/search', searchProducts);
 //get all products (public)
 router.get('/', getAllProducts);
 

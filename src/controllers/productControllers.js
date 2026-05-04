@@ -107,7 +107,28 @@ const deleteProduct = async (req, res, next) => {
         next(error);
     }
 };
+const searchProducts = async (req, res, next) => {
+    try {
+        const { query } = req.query;
+        if (!query) {
+            return res.status(400).json({ message: 'Search query is required' });
+        }
+        const products = await prisma.findMany({
+            where: {
+                isDeleted: false,  // dont return  soft deleted products
+                OR: [
+                    { name: { contains: query, mode: 'insensitive' } },
+                    { category: { name: { contains: query, mode: 'insensitive' } } }
+                ]
+            },
+            include: { category: true },
+        });
+        res.json({ data: products });
+    } catch (error) {
+        next(error);
+    }
+}
 
 module.exports = {
-    createProduct, getAllProducts, updateProduct, deleteProduct
+    createProduct, getAllProducts, updateProduct, deleteProduct, searchProducts
 };
