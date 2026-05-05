@@ -5,7 +5,7 @@ const createProduct = async (req, res, next) => {
     try {
         const { name, price, quantity, manufacturedDate, categoryId } = req.body;
         // get the image path if a file is uploaded
-        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const imageUrl = req.file ? req.file.path : null;
 
         //basic validation
         if (!name || !price || !quantity || !manufacturedDate) {
@@ -70,6 +70,7 @@ const updateProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, price, quantity, manufacturedDate, categoryId } = req.body;
+        const imageUrl = req.file ? req.file.path : null;
 
         const product = await prisma.$transaction(
             async (tx) => {
@@ -85,7 +86,8 @@ const updateProduct = async (req, res, next) => {
                         ...(price && { price: parseFloat(price) }),
                         ...(quantity && { quantity: parseInt(quantity) }),
                         ...(manufacturedDate && { manufacturedDate: new Date(manufacturedDate) }),
-                        ...(categoryId && { categoryId: parseInt(categoryId) })
+                        ...(categoryId && { categoryId: parseInt(categoryId) }),
+                        ...(imageUrl && { imageUrl })
                     }
                 });
             });

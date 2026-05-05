@@ -1,18 +1,24 @@
 const multer = require('multer');
-const path = require('path');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config();
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 //configure how files are stored
 
-const storage = multer.diskStorage({
-    destination:(req,file,cb)=>{
-        cb(null, 'uploads/'); //store in the upload folder  
-    },
-    filename:(req,file,cb)=>{
-        //give the file a unique name
-        cb(null,Date.now()+path.extname(file.originalname));
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'shopnest', //to create a folder in cloudinary dashboard
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
     }
 });
 
-const upload =multer({storage:storage});
+const upload = multer({ storage: storage });
 
-module.exports=upload;
+module.exports = upload;

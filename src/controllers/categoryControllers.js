@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 const createCategory = async (req, res, next) => {
     try {
         const { name, description } = req.body;
-        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const imageUrl = req.file ? req.file.path : null;
         if (!name) {
             return res.status(400).json({ message: 'Category name is required' });
         }
@@ -35,7 +35,7 @@ const updateCategory = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { name, description } = req.body;
-        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+        const imageUrl = req.file ? req.file.path : null;
 
         const dataToUpdate = {
             ...(name && { name }),
