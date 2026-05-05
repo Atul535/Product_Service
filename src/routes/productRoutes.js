@@ -13,7 +13,8 @@ router.get('/', getAllProducts);
 router.post('/', authMiddleware, upload.single('image'), createProductRules, validate, createProduct);
 
 //update product (private)
-router.put('/:id', authMiddleware, updateProductRules, validate, updateProduct);
+router.put('/:id', authMiddleware, upload.single('image'), updateProductRules, validate, updateProduct);
+
 
 //delete product (private)
 router.delete('/:id', authMiddleware, deleteProduct)
