@@ -93,7 +93,7 @@ const updateProduct = async (req, res, next) => {
             });
         res.json({ message: 'Product updated successfully', product });
     } catch (error) {
-        res.status(404).json({ message: "Product not found!" });
+        next(error);
     }
 };
 
@@ -109,6 +109,7 @@ const deleteProduct = async (req, res, next) => {
         next(error);
     }
 };
+
 const searchProducts = async (req, res, next) => {
     try {
         const { query } = req.query;
