@@ -2,7 +2,7 @@ const express = require('express');
 const { createProduct, getAllProducts, updateProduct, deleteProduct, searchProducts } = require('../controllers/productControllers');
 const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
-const { createProductRules, validate } = require('../middleware/validationMiddleware');
+const { createProductRules, updateProductRules, validate } = require('../middleware/validationMiddleware');
 const router = express.Router();
 
 router.get('/search', searchProducts);
